@@ -30,8 +30,8 @@ def create_training_sample(idx: int):
     sample = {
         "x": cx,
         "y": cy,
-        "width": IMAGE_WIDTH,
-        "height": IMAGE_HEIGHT,
+        "width": CIRCLE_RADIUS,
+        "height": CIRCLE_RADIUS,
         "image_path": image_path
     }
 
