@@ -56,4 +56,4 @@ def build_dataset(training_samples: int):
 
     
 if __name__ == "__main__":
-    build_dataset(1)
+    build_dataset(100)

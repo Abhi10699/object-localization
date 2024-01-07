@@ -21,13 +21,14 @@ class ObjLocDataset(Dataset):
 
         for sample in file_json:
             image = Image.open(sample['image_path'])
+            image = image.convert('L')
             coords = torch.tensor([
                 sample['x'],
                 sample['y'],
                 sample['width'],
                 sample['height']]
             ).to(torch.float)
-            image_tensor = torch.from_numpy(np.array(image)).to(torch.float)
+            image_tensor = torch.from_numpy(np.array(image)).to(torch.float).unsqueeze(0)
             self.inputs.append(image_tensor)
             self.outputs.append(coords)
         
@@ -44,7 +45,7 @@ class ObjLocDataset(Dataset):
 def plot_bounding_box(image, bbox):
 
     image = image.detach().numpy()
-    print(type(image))
+    print(image.shape)
     image = Image.fromarray(image[0])
 
     fig, ax = plt.subplots()
@@ -53,7 +54,14 @@ def plot_bounding_box(image, bbox):
 
 
     x, y, width, height = bbox
-    rect = patches.Rectangle((x,y), width, height, linewidth=2, edgecolor="r",facecolor='none')
+    rect = patches.Rectangle(
+            (x,y), 
+            width, 
+            height, 
+            linewidth=2, 
+            edgecolor="r",
+            facecolor='none'
+    )
     
     ax.add_patch(rect)
     plt.show()
@@ -61,11 +69,11 @@ def plot_bounding_box(image, bbox):
 def train(file_path: str):
 
     dataset = ObjLocDataset(file_path)
-    dataLoader = DataLoader(dataset, batch_size=1)
+    dataLoader = DataLoader(dataset, batch_size=16)
 
     sample_shape = dataset.get_sample_shape()
     
-    model = net.Net(sample_shape[0]*sample_shape[1], 4)
+    model = net.ConvNet(4)
     optim = torch.optim.Adam(model.parameters(),lr=5e-4)
 
     criterion = torch.nn.MSELoss()
@@ -91,12 +99,16 @@ def train(file_path: str):
             loss.backward()
             optim.step()
 
-            epoch_loss.append(loss)
+            epoch_loss.append(loss.detach().numpy())
 
 
         epoch_loss = np.array(epoch_loss)
-        print(f"Epoch {epoch}: ",epoch_loss)
+        print(f"Epoch {epoch}: ",np.mean(epoch_loss))
 
+
+    # save model
+
+    torch.save(model.state_dict(),"conv_model.pth")
 
     # eval
 
